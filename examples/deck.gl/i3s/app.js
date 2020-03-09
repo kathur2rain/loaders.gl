@@ -47,6 +47,8 @@ export default class App extends PureComponent {
     super(props);
     this._tilesetStatsWidget = null;
     this.state = {
+      url: null,
+      token: null,
       name: INITIAL_EXAMPLE_NAME,
       viewState: INITIAL_VIEW_STATE
     };
@@ -68,13 +70,21 @@ export default class App extends PureComponent {
     });
 
     // Check if a tileset is specified in the query params
-    const dataUrl = this._loadTilesetFromUrl() || EXAMPLES[INITIAL_EXAMPLE_NAME].url;
-    this.setState({dataUrl});
+    const {url, token} = this._loadTilesetFromUrl();
+    let dataUrl = url || EXAMPLES[INITIAL_EXAMPLE_NAME].url;
+    if (token) {
+      dataUrl = `${dataUrl}?token=${token}`;
+    }
+
+    this.setState({dataUrl, token});
   }
 
   _loadTilesetFromUrl() {
     const parsedUrl = new URL(window.location.href);
-    return parsedUrl.searchParams.get('url');
+    return  {
+      url: parsedUrl.searchParams.get('url'),
+      token: parsedUrl.searchParams.get('token')
+    };
   }
 
   // Updates stats, called every frame
@@ -111,7 +121,11 @@ export default class App extends PureComponent {
   }
 
   _renderLayers() {
-    const {dataUrl} = this.state;
+    const {dataUrl, token} = this.state;
+    const loadOptions = {};
+    if (token) {
+      loadOptions.token = token;
+    }
     return [
       new Tile3DLayer({
         data: dataUrl,
@@ -119,7 +133,7 @@ export default class App extends PureComponent {
         onTilesetLoad: this._onTilesetLoad.bind(this),
         onTileLoad: () => this._updateStatWidgets(),
         onTileUnload: () => this._updateStatWidgets(),
-        loadOptions: {}
+        loadOptions
       })
     ];
   }
